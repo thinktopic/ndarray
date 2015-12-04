@@ -423,8 +423,10 @@
          (~'set-2d [m# row# column# x#]
            (~'set-at (~'mat/clone m#) row# column# x#))
 
-         (~'set-nd [m# indexes# x#]
-           (apply ~'set-at (~'mat/clone m#) (concat indexes# x#)))
+         (~'set-nd [m# indexes# v#]
+           (let [new-m# (~'mat/clone m#)]
+             (apply ~'set-at new-m# (concat indexes# [v#]))
+             new-m#))
 
          (~'is-mutable? [m#] true)
 
@@ -436,7 +438,8 @@
              (~'set-at m# x# y# v#))
 
            (~'set-nd! [m# indexes# v#]
-             (apply ~'set-at m# (concat indexes# v#)))
+             (apply ~'set-at m# (concat indexes# [v#]))
+             m#)
 
          ~'clojure.core.matrix.protocols/PMatrixCloning
          (~'clone [m#]
