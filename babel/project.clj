@@ -1,4 +1,4 @@
-(defproject thi.ng/ndarray "0.3.0"
+(defproject thi.ng/ndarray "0.3.1-SNAPSHOT"
   :description  "ndarray for Clojure/Clojurescript"
   :url          "http://thi.ng/ndarray"
   :license      {:name "Apache Software License 2.0"
