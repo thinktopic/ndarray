@@ -199,7 +199,7 @@
   ([type data]
    (ndarray type data [(count data)]))
   ([type data shape]
-   #?(:cljs (js/console.log (str "ndarray: " type " " data " " shape (nil? shape))))
+   ;#?(:cljs (js/console.log (str "ndarray: " type " " data " " shape (nil? shape))))
    (let [{:keys [ctor data-ctor]} (get-in @ctor-registry [(count shape) type])]
      (if ctor
        (ctor (if (sequential? data) (data-ctor data) data) 0 (shape->stride shape) shape)

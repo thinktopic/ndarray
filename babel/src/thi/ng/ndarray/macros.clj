@@ -53,6 +53,7 @@
 (defn- for*
   [->a ->sh rdim body]
   `(for [~@(mapcat #(vector (->a %) `(range ~(->sh %))) rdim)] ~body))
+
 (defn- reduce-1
   [f acc ->p ->sh ->st get data rdim clj? init?]
   (let [x    (->p 0)
@@ -192,6 +193,7 @@
                               (unchecked-add-int ~idx ~stx)))
                      (if (reduced? ~acc)
                        @~acc ~acc)))))))))))
+
 (def ^:private reduce-impls
   [nil reduce-1 reduce-2 reduce-3 reduce-4])
 
