@@ -192,16 +192,14 @@
      (def-ndarray 4 nil nil :int16 a/int16 aget aset false)
      (def-ndarray 4 nil nil :int32 a/int32 aget aset false)
      (def-ndarray 4 nil nil :float32 a/float32 aget aset false)
-     (def-ndarray 4 nil nil :float64 a/float64 aget aset false)
-     ))
+     (def-ndarray 4 nil nil :float64 a/float64 aget aset false)))
 
 (defn ndarray
   ([type data]
    (ndarray type data [(count data)]))
   ([type data shape]
-   #?(:cljs (js/console.log (str "ndarray: " type " " data " " shape (nil? shape))))
+   #?(:cljs (js/console.log (str "here ndarray: " type " " data " " shape " " (nil? shape))))
    (let [{:keys [ctor data-ctor]} (get-in @ctor-registry [(count shape) type])]
-     #?(:cljs (js/console.log (str "found constructor: " ctor)))
      (if ctor
        (ctor (if (sequential? data) (data-ctor data) data) 0 (shape->stride shape) shape)
        (throw (new #?(:clj IllegalArgumentException :cljs js/Error)

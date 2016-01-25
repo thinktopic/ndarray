@@ -396,7 +396,7 @@
          (~'implementation-key [_#] :ndarray)
          (~'meta-info [_#] {:doc "thi.ng.ndarray matrix"})
          (~'construct-matrix [_# data#]
-           (~'js/console.print "construct-matrix" data#)
+           (~'.log js/console "construct-matrix" data#)
            (~'thi.ng.ndarray.core/ndarray ~type-id data# (mat/shape data#)))
          (~'new-vector [_# length#]
            (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor length#) [length#]))
