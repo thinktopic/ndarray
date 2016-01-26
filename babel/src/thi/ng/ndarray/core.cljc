@@ -198,7 +198,6 @@
   ([type data]
    (ndarray type data [(count data)]))
   ([type data shape]
-   #?(:cljs (js/console.log (str "here ndarray: " type " " data " " shape " " (nil? shape))))
    (let [{:keys [ctor data-ctor]} (get-in @ctor-registry [(count shape) type])]
      (if ctor
        (ctor (if (sequential? data) (data-ctor data) data) 0 (shape->stride shape) shape)
@@ -209,7 +208,7 @@
   [shape]
   (let [size (apply * shape)
         ary (double-array size)]
-    (.fill ary 0)
+    #?(:clj (java.util.Arrays/fill ary 0.0) :cljs (.fill ary 0))
     (ndarray :float64 ary shape)))
 
 (clojure.core.matrix.implementations/register-implementation :ndarray (zeros [2 2]))
