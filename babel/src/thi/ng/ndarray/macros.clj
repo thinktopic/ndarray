@@ -449,7 +449,12 @@
              (~'thi.ng.ndarray.core/ndarray ~type-id cloned-ary# [~@shapes])))
 
          ~'clojure.core.matrix.protocols/PTypeInfo
-         (~'element-type [_#] ~type-id))
+         (~'element-type [_#] ~type-id)
+
+         ; Shouldn't the default implementation just use mp/to-vector here?
+         ~'clojure.core.matrix.protocols/PVectorView
+         (~'as-vector [_#]
+           (~'thi.ng.ndarray.core/ndarray ~type-id ~data [(apply * [~@shapes])])))
 
        (defn ~(with-meta raw-name {:export true})
          [data# o# [~@strides] [~@shapes]]
