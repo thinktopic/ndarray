@@ -1,4 +1,5 @@
-(ns thi.ng.ndarray.macros)
+(ns thi.ng.ndarray.macros
+  (:require [clojure.core.matrix.protocols :as mp]))
 
 (defn- type-hinted
   [type x] (if type (with-meta x {:tag (name type)}) x))
@@ -450,6 +451,9 @@
 
          ~'clojure.core.matrix.protocols/PTypeInfo
          (~'element-type [_#] ~type-id)
+
+         ~'clojure.core.matrix.protocols/PFunctionalOperations
+         (~'element-seq [_#] (IndexedSeq. ~data 0))
 
          ; Shouldn't the default implementation just use mp/to-vector here?
          ~'clojure.core.matrix.protocols/PVectorView
