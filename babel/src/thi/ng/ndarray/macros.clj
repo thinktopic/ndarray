@@ -397,11 +397,18 @@
          (~'implementation-key [_#] :ndarray)
          (~'meta-info [_#] {:doc "thi.ng.ndarray matrix"})
          (~'construct-matrix [_# data#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id (mat/eseq data#) (mat/shape data#)))
+           (let [dims# (long (mp/dimensionality data#))]
+             (cond
+               (== dims# 0) (mp/get-0d data#)
+               :default (~'thi.ng.ndarray.core/ndarray ~type-id (mat/eseq data#) (mat/shape data#)))))
          (~'new-vector [_# length#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor length#) [length#]))
+           (let [r# (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor length#) [length#])]
+             (dotimes [i# length#] (aset r# i# 0.0))
+             r#))
          (~'new-matrix [_# rows# columns#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (* rows# columns#)) [rows# columns#]))
+           (let [r# (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (* rows# columns#)) [rows# columns#])]
+             (dotimes [i# (* rows# columns#)] (aset r# i# 0.0))
+             r#))
          (~'new-matrix-nd [_# shape#]
            (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (apply * shape#)) shape#))
          (~'supports-dimensionality? [_# dimensions#]
@@ -455,10 +462,29 @@
          ~'clojure.core.matrix.protocols/PFunctionalOperations
          (~'element-seq [_#] (IndexedSeq. ~data 0))
 
-         ; Shouldn't the default implementation just use mp/to-vector here?
          ~'clojure.core.matrix.protocols/PVectorView
          (~'as-vector [_#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id ~data [(apply * [~@shapes])])))
+           (~'thi.ng.ndarray.core/ndarray ~type-id ~data [(apply * [~@shapes])]))
+
+         ~'clojure.core.matrix.protocols/PMatrixEquality
+         (~'matrix-equals [a# b#]
+           (cond
+             (identical? a# b#) true
+             (mp/same-shape? a# b#)
+             (if (== 0 (long (mp/dimensionality a#)))
+               (== (mp/get-0d a#) (clojure.core.matrix.macros/scalar-coerce b#))
+               (not-any? false? (map == (mp/element-seq a#) (mp/element-seq b#))))
+             :else false))
+
+         ~'clojure.core.matrix.protocols/PValueEquality
+         (~'value-equals [a# b#]
+           (and
+             (mp/same-shape? a# b#)
+             (every? true? (map = (mp/element-seq a#) (mp/element-seq b#)))))
+
+         ~'clojure.core.matrix.protocols/PNumerical
+         (~'numerical? [_#] true)
+         )
 
        (defn ~(with-meta raw-name {:export true})
          [data# o# [~@strides] [~@shapes]]
