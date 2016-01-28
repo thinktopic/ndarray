@@ -410,7 +410,9 @@
              (dotimes [i# (* rows# columns#)] (aset r# i# 0.0))
              r#))
          (~'new-matrix-nd [_# shape#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (apply * shape#)) shape#))
+           (if-let [shape# (seq shape#)]
+             (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (apply * shape#)) shape#)
+             0.0))
          (~'supports-dimensionality? [_# dimensions#]
            (<= dimensions# 4))
 
@@ -460,7 +462,7 @@
          (~'element-type [_#] ~type-id)
 
          ~'clojure.core.matrix.protocols/PFunctionalOperations
-         (~'element-seq [_#] (IndexedSeq. ~data 0))
+         (~'element-seq [_#] (cljs.core/IndexedSeq. ~data 0))
 
          ~'clojure.core.matrix.protocols/PVectorView
          (~'as-vector [_#]
