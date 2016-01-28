@@ -208,7 +208,8 @@
   [shape]
   (let [size (apply * shape)
         ary (double-array size)]
-    #?(:clj (java.util.Arrays/fill ary 0.0) :cljs (.fill ary 0))
+    #?(:clj (java.util.Arrays/fill ary 0.0) 
+       :cljs (dotimes [i size] (aset ary i 0.0)))
     (ndarray :float64 ary shape)))
 
 (clojure.core.matrix.implementations/register-implementation :ndarray (zeros [2 2]))
