@@ -462,7 +462,7 @@
          (~'element-type [_#] ~type-id)
 
          ~'clojure.core.matrix.protocols/PFunctionalOperations
-         (~'element-seq [_#] (cljs.core/IndexedSeq. ~data 0))
+         (~'element-seq [m#] (seq m#))
 
          ~'clojure.core.matrix.protocols/PVectorView
          (~'as-vector [_#]
