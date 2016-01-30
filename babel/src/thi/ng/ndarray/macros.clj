@@ -1,5 +1,6 @@
 (ns thi.ng.ndarray.macros
-  (:require [clojure.core.matrix.protocols :as mp]))
+  (:require
+    [clojure.core.matrix.protocols :as mp]))
 
 (defn- type-hinted
   [type x] (if type (with-meta x {:tag (name type)}) x))
@@ -199,7 +200,7 @@
   [nil reduce-1 reduce-2 reduce-3 reduce-4])
 
 (defn- inject-clj-protos
-  [clj? get data ->a ->sh ->st idx rdim]
+  [clj? get data ->a ->sh ->st idx rdim dim]
   (let [[f init] (repeatedly gensym)
         r-impl   (reduce-impls (count rdim))
         reduce*  (partial r-impl f init ->a ->sh ->st get data rdim clj?)]
@@ -217,13 +218,22 @@
       (list
        'ISeqable
        `(~'-seq
-         [_#]
-         ~(for* ->a ->sh rdim `(~get ~data ~idx)))
-       'IReduce
-       `(~'-reduce
-         [_# ~f] ~(reduce* false))
-       `(~'-reduce
-         [_# ~f ~init] ~(reduce* true))))))
+         [m#]
+         ; TODO: this makes ndarray compatible with the other core.matrix seq
+         ; implementations, but it differs from the original which just returned
+         ; the data, rather than the inner dimensions.
+         (if (= 1 ~dim)
+          ~(for* ->a ->sh rdim `(~get ~data ~idx))
+           (let [shape# (thi.ng.ndarray.core/shape m#)]
+             (map #(apply thi.ng.ndarray.core/pick m# (concat [%] (repeat (dec ~dim) nil))) (range (first shape#))))))
+       ;'IReduce
+       ;`(~'-reduce
+       ;  [m# ~f]
+       ;  ~(reduce* false))
+       ;`(~'-reduce
+       ;  [m# ~f ~init]
+       ;  ~(reduce* true))
+       ))))
 
 (defmacro def-ndarray
   [dim cast type-hint type-id data-ctor get set & [clj?]]
@@ -243,7 +253,7 @@
     `(do
        (deftype ~type-name
            [~data ~'_offset ~@strides ~@shapes]
-         ~@(inject-clj-protos clj? get data ->a ->sh ->st (make-indexer-syms dim ->st ->a) rdim)
+         ~@(inject-clj-protos clj? get data ->a ->sh ->st (make-indexer-syms dim ->st ->a) rdim dim)
          ~'thi.ng.ndarray.core/PNDArray
          (~'data
            [_#] ~data)
@@ -393,83 +403,81 @@
              :size (* ~@(pair-fn '* shapes)) :total (count (seq _#)) :offset ~'_offset
              :shape [~@shapes] :stride [~@strides]}))
 
-         ~'clojure.core.matrix.protocols/PImplementation
-         (~'implementation-key [_#] :ndarray)
-         (~'meta-info [_#] {:doc "thi.ng.ndarray matrix"})
-         (~'construct-matrix [_# data#]
+         mp/PImplementation
+         (mp/implementation-key [_#] :thing-ndarray)
+         (mp/meta-info [_#] {:doc "thi.ng.ndarray matrix"})
+         (mp/construct-matrix [_# data#]
            (let [dims# (long (mp/dimensionality data#))]
              (cond
                (== dims# 0) (mp/get-0d data#)
-               :default (~'thi.ng.ndarray.core/ndarray ~type-id (mat/eseq data#) (mat/shape data#)))))
-         (~'new-vector [_# length#]
+               :default
+                 (~'thi.ng.ndarray.core/ndarray ~type-id (mat/eseq data#) (mat/shape data#)))))
+         (mp/new-vector [_# length#]
            (let [r# (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor length#) [length#])]
              (dotimes [i# length#] (aset r# i# 0.0))
              r#))
-         (~'new-matrix [_# rows# columns#]
+         (mp/new-matrix [_# rows# columns#]
            (let [r# (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (* rows# columns#)) [rows# columns#])]
              (dotimes [i# (* rows# columns#)] (aset r# i# 0.0))
              r#))
-         (~'new-matrix-nd [_# shape#]
+         (mp/new-matrix-nd [_# shape#]
            (if-let [shape# (seq shape#)]
              (~'thi.ng.ndarray.core/ndarray ~type-id (~data-ctor (apply * shape#)) shape#)
              0.0))
-         (~'supports-dimensionality? [_# dimensions#]
+         (mp/supports-dimensionality? [_# dimensions#]
            (<= dimensions# 4))
 
-         ~'clojure.core.matrix.protocols/PDimensionInfo
-         (~'dimensionality [_#] (count [~@shapes]))
-         (~'get-shape [_#] [~@shapes])
-         (~'is-scalar? [_#] false)
-         (~'is-vector? [_#] (= 1 ~dim))
-         (~'dimension-count [_# dimension-number#]
+         mp/PDimensionInfo
+         (mp/dimensionality [_#] (count [~@shapes]))
+         (mp/get-shape [_#] [~@shapes])
+         (mp/is-scalar? [_#] false)
+         (mp/is-vector? [_#] (= 1 ~dim))
+         (mp/dimension-count [_# dimension-number#]
            (nth [~@shapes] dimension-number#))
 
-         ~'clojure.core.matrix.protocols/PIndexedAccess
-         (~'get-1d [m# i#] (~'get-at m# i#))
-         (~'get-2d [m# row# column#] (~'get-at m# row# column#))
-         (~'get-nd [m# indexes#] (apply ~'get-at m# indexes#))
+         mp/PIndexedAccess
+         (mp/get-1d [m# i#] (~'get-at m# i#))
+         (mp/get-2d [m# row# column#] (~'get-at m# row# column#))
+         (mp/get-nd [m# indexes#] (apply ~'get-at m# indexes#))
 
-         ~'clojure.core.matrix.protocols/PIndexedSetting
-         (~'set-1d [m# i# x#] (~'set-at (~'mat/clone m#) i# x#))
-
-         (~'set-2d [m# row# column# x#]
+         mp/PIndexedSetting
+         (mp/set-1d [m# i# x#] (~'set-at (~'mat/clone m#) i# x#))
+         (mp/set-2d [m# row# column# x#]
            (~'set-at (~'mat/clone m#) row# column# x#))
-
-         (~'set-nd [m# indexes# v#]
+         (mp/set-nd [m# indexes# v#]
            (let [new-m# (~'mat/clone m#)]
              (apply ~'set-at new-m# (concat indexes# [v#]))
              new-m#))
+         (mp/is-mutable? [m#] true)
 
-         (~'is-mutable? [m#] true)
+         mp/PIndexedSettingMutable
+         (mp/set-1d! [m# x# v#]
+           (~'set-at m# x# v#))
 
-         ~'clojure.core.matrix.protocols/PIndexedSettingMutable
-           (~'set-1d! [m# x# v#]
-             (~'set-at m# x# v#))
+         (mp/set-2d! [m# x# y# v#]
+           (~'set-at m# x# y# v#))
 
-           (~'set-2d! [m# x# y# v#]
-             (~'set-at m# x# y# v#))
-
-           (~'set-nd! [m# indexes# v#]
-             (apply ~'set-at m# (concat indexes# [v#]))
+         (mp/set-nd! [m# indexes# v#]
+           (apply ~'set-at m# (concat indexes# [v#]))
              m#)
 
-         ~'clojure.core.matrix.protocols/PMatrixCloning
-         (~'clone [m#]
+         mp/PMatrixCloning
+         (mp/clone [m#]
            (let [cloned-ary# (.slice ~data 0)]
              (~'thi.ng.ndarray.core/ndarray ~type-id cloned-ary# [~@shapes])))
 
-         ~'clojure.core.matrix.protocols/PTypeInfo
-         (~'element-type [_#] ~type-id)
+         mp/PTypeInfo
+         (mp/element-type [_#] ~type-id)
 
-         ~'clojure.core.matrix.protocols/PFunctionalOperations
-         (~'element-seq [m#] (seq m#))
+         mp/PFunctionalOperations
+         (mp/element-seq [m#] (IndexedSeq. ~data 0))
 
-         ~'clojure.core.matrix.protocols/PVectorView
-         (~'as-vector [_#]
+         mp/PVectorView
+         (mp/as-vector [_#]
            (~'thi.ng.ndarray.core/ndarray ~type-id ~data [(apply * [~@shapes])]))
 
-         ~'clojure.core.matrix.protocols/PMatrixEquality
-         (~'matrix-equals [a# b#]
+         mp/PMatrixEquality
+         (mp/matrix-equals [a# b#]
            (cond
              (identical? a# b#) true
              (mp/same-shape? a# b#)
@@ -478,15 +486,20 @@
                (not-any? false? (map == (mp/element-seq a#) (mp/element-seq b#))))
              :else false))
 
-         ~'clojure.core.matrix.protocols/PValueEquality
-         (~'value-equals [a# b#]
+         mp/PValueEquality
+         (mp/value-equals [a# b#]
            (and
              (mp/same-shape? a# b#)
              (every? true? (map = (mp/element-seq a#) (mp/element-seq b#)))))
 
-         ~'clojure.core.matrix.protocols/PNumerical
-         (~'numerical? [_#] true)
-         )
+         mp/PNumerical
+         (mp/numerical? [_#] true)
+
+         cljs.core/IPrintWithWriter
+         (cljs.core/-pr-writer [obj# writer# _opts#]
+           (cljs.core/write-all writer# "#[thing-ndarray " (str (mp/get-shape obj#)) "]: "
+                      (str (mp/convert-to-nested-vectors obj#))))
+       )
 
        (defn ~(with-meta raw-name {:export true})
          [data# o# [~@strides] [~@shapes]]

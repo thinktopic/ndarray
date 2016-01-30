@@ -14,6 +14,7 @@
    [thi.ng.math.core :as m]))
 
 (declare ndarray)
+#?(:cljs (enable-console-print!))
 
 (defprotocol PNDArray
   (data [_]
@@ -212,6 +213,5 @@
        :cljs (dotimes [i size] (aset ary i 0.0)))
     (ndarray :float64 ary shape)))
 
-(clojure.core.matrix.implementations/register-implementation :ndarray (zeros [2 2]))
-(mat/set-current-implementation :ndarray)
-
+(clojure.core.matrix.implementations/register-implementation :thing-ndarray (zeros [2 2]))
+;(mat/set-current-implementation :thing-ndarray)
