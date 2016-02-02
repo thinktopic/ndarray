@@ -18,7 +18,7 @@
 
 (defn array-seq*
   [ary]
-  #?(:clj (seq ary) :cljs (IndexedSeq. ary 0)))
+  #?(:clj (seq ary) :cljs (if ary (IndexedSeq. ary 0) nil)))
 
 (defprotocol PNDArray
   (data [_]
