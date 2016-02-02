@@ -222,8 +222,10 @@
          ; TODO: this makes ndarray compatible with the other core.matrix seq
          ; implementations, but it differs from the original which just returned
          ; the data, rather than the inner dimensions.
-         (if (= 1 ~dim)
-          ~(for* ->a ->sh rdim `(~get ~data ~idx))
+         (cond
+           (or (nil? ~data) (= 0 (.-length ~data))) nil
+           (= 1 ~dim) ~(for* ->a ->sh rdim `(~get ~data ~idx))
+           :default
            (let [shape# (thi.ng.ndarray.core/shape m#)]
              (map #(apply thi.ng.ndarray.core/pick m# (concat [%] (repeat (dec ~dim) nil))) (range (first shape#))))))
        ;'IReduce
@@ -470,7 +472,7 @@
          (mp/element-type [_#] ~type-id)
 
          mp/PFunctionalOperations
-         (mp/element-seq [m#] (IndexedSeq. ~data 0))
+         (mp/element-seq [m#] (~'array-seq ~data))
 
          mp/PVectorView
          (mp/as-vector [_#]
@@ -495,10 +497,10 @@
          mp/PNumerical
          (mp/numerical? [_#] true)
 
-         cljs.core/IPrintWithWriter
-         (cljs.core/-pr-writer [obj# writer# _opts#]
-           (cljs.core/write-all writer# "#[thing-ndarray " (str (mp/get-shape obj#)) "]: "
-                      (str (mp/convert-to-nested-vectors obj#))))
+         ;cljs.core/IPrintWithWriter
+         ;(cljs.core/-pr-writer [obj# writer# _opts#]
+         ;  (cljs.core/write-all writer# "#[thing-ndarray " (str (mp/get-shape obj#)) "]: "
+         ;             (str (mp/convert-to-nested-vectors obj#))))
        )
 
        (defn ~(with-meta raw-name {:export true})

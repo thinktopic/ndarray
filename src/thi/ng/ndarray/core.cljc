@@ -214,4 +214,3 @@
     (ndarray :float64 ary shape)))
 
 (clojure.core.matrix.implementations/register-implementation :thing-ndarray (zeros [2 2]))
-;(mat/set-current-implementation :thing-ndarray)
