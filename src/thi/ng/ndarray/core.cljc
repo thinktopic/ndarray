@@ -16,6 +16,10 @@
 (declare ndarray)
 #?(:cljs (enable-console-print!))
 
+(defn array-seq*
+  [ary]
+  #?(:clj (seq ary) :cljs (IndexedSeq. ary 0)))
+
 (defprotocol PNDArray
   (data [_]
     "Returns the backing data array.")

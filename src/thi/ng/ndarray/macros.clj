@@ -466,17 +466,18 @@
          mp/PMatrixCloning
          (mp/clone [m#]
            (let [cloned-ary# (.slice ~data 0)]
-             (~'thi.ng.ndarray.core/ndarray ~type-id cloned-ary# [~@shapes])))
+             (~'ndarray ~type-id cloned-ary# [~@shapes])))
 
          mp/PTypeInfo
          (mp/element-type [_#] ~type-id)
 
          mp/PFunctionalOperations
-         (mp/element-seq [m#] (~'array-seq ~data))
+         (mp/element-seq [m#]
+           (~'array-seq* ~data))
 
          mp/PVectorView
          (mp/as-vector [_#]
-           (~'thi.ng.ndarray.core/ndarray ~type-id ~data [(apply * [~@shapes])]))
+           (~'ndarray ~type-id ~data [(apply * [~@shapes])]))
 
          mp/PMatrixEquality
          (mp/matrix-equals [a# b#]
