@@ -465,7 +465,9 @@
 
          mp/PMatrixCloning
          (mp/clone [m#]
-           (let [cloned-ary# (.slice ~data 0)]
+           (let [length# (apply * [~@shapes])
+                 cloned-ary# (double-array length#)]
+             (dotimes [i# length#] (aset cloned-ary# i# (aget ~data i#)))
              (~'thi.ng.ndarray.core/ndarray ~type-id cloned-ary# [~@shapes])))
 
          mp/PTypeInfo
